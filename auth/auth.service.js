@@ -53,7 +53,7 @@ async function register(userParams, ipAddress) {
 
 async function renewTokens(oldRefreshToken, ipAddress) {
   const oldToken = await RefreshToken.findOneAndDelete({ token: oldRefreshToken });
-  if (oldToken && oldToken.isActive) {
+  if (oldToken && oldToken.expires > Date.now()) {
     const user = await User.findOne({ _id: oldToken.user });
     if (user) {
       const refreshToken = generateRefreshToken(user, ipAddress);
