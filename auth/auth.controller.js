@@ -19,6 +19,7 @@ function loginSchema(req, res, next) {
   const schema = Joi.object({
     username: Joi.string().required(),
     password: Joi.string().required(),
+    resource: Joi.string().optional(),
   });
   validateRequest(req, next, schema);
 }

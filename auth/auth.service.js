@@ -6,20 +6,36 @@ const config = require('../config');
 const User = require('./user.model');
 const RefreshToken = require('./refresh-token.model');
 
-function generateRefreshToken(user, ipAddress) {
+function generateRefreshToken(user, ipAddress, resource) {
   return new RefreshToken({
     user: user.id,
     token: crypto.randomBytes(40).toString('hex'),
     expires: new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)),
     createdByIp: ipAddress,
+    resource,
   });
 }
 
-function generateAccessToken(user) {
-  return jwt.sign({ sub: user.id, id: user.id, username: user.username }, config.secret, { expiresIn: '15m' });
+function generateAccessToken(user, resource) {
+  let secretKey = config.secret;
+
+  switch (resource) {
+    case 'spybot':
+      secretKey = config.spybotKey;
+      break;
+    default:
+      break;
+  }
+
+  return jwt.sign({
+    sub: user.id,
+    id: user.id,
+    username: user.username,
+    resource,
+  }, secretKey, { expiresIn: '15m' });
 }
 
-async function login({ username, password }, ipAddress) {
+async function login({ username, password, resource }, ipAddress) {
   const user = await User.findOne({ username });
   if (!user || !await bcrypt.compare(password, user.passwordHash)) {
     const error = new Error('Username or password is incorrect.');
@@ -27,9 +43,9 @@ async function login({ username, password }, ipAddress) {
     throw error;
   }
   await RefreshToken.deleteMany({ user: user.id });
-  const refreshToken = generateRefreshToken(user, ipAddress);
+  const refreshToken = generateRefreshToken(user, ipAddress, resource);
   await refreshToken.save();
-  const accessToken = generateAccessToken(user);
+  const accessToken = generateAccessToken(user, resource);
   return { refreshToken, accessToken };
 }
 

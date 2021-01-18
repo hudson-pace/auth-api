@@ -25,8 +25,8 @@ const httpServer = http.createServer(app);
 let httpsServer;
 if (config.environment === 'production') {
   const options = {
-    key: fs.readFileSync('/etc/letsencrypt/live/hudsonotron.com/privkey.pem'),
-    cert: fs.readFileSync('/etc/letsencrypt/live/hudsonotron.com/fullchain.pem'),
+    key: fs.readFileSync(config.certKeyPath),
+    cert: fs.readFileSync(config.certPath),
   };
   httpsServer = https.createServer(options, app);
 }
@@ -38,4 +38,6 @@ app.use('/', authController);
 app.use(errorHandler);
 
 httpServer.listen(8000);
-httpsServer.listen(8001);
+if (httpsServer) {
+  httpsServer.listen(8001);
+}
